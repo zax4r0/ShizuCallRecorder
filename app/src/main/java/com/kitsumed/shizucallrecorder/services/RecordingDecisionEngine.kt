@@ -116,6 +116,11 @@ class RecordingDecisionEngine private constructor(context: Context) {
      * @return true if the call should be recorded, false if it should enter standby
      */
     private fun shouldAutoRecord(metadata: EnrichedCallData): Boolean {
+        if (metadata.isScreenRecording) {
+            AppLogger.i("Auto-recording approved: Call is marked for screen recording.")
+            return true
+        }
+
         val isAnonymous = metadata.normalisedPhoneNumber.isBlank()
 
         return when (metadata.direction) {

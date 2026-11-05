@@ -114,8 +114,9 @@ object RecordingFileNameFormatter {
             .replace(FileNamePlaceholder.CROSS_COUNTRY.tag, crossCountryStr)
             .replace(FileNamePlaceholder.PACKAGE_NAME.tag, packageName)
 
-        AppLogger.v( "Formatted base filename: '$baseName' with template '$template'")
-        return "$baseName${codec.containerExtension}"
+        val extension = if (metadata.isScreenRecording) ".mp4" else codec.containerExtension
+        AppLogger.v( "Formatted base filename: '$baseName' with template '$template', extension: '$extension'")
+        return "$baseName$extension"
     }
 
     /**

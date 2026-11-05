@@ -36,7 +36,8 @@ data class EnrichedCallData(
     val isCrossCountry: Boolean = false,
     val callerName: String? = null,
     val packageName: String? = null,
-    val isCallAudioVoIpBased: Boolean = false
+    val isCallAudioVoIpBased: Boolean = false,
+    val isScreenRecording: Boolean = false
 ) : Parcelable {
 
     /**
@@ -67,6 +68,7 @@ data class EnrichedCallData(
                         callerName = base.osProvidedCallerName,
                         packageName = base.packageName,
                         isCallAudioVoIpBased = base.isCallAudioVoIpBased,
+                        isScreenRecording = base.isScreenRecording,
                     )
                 }
 
@@ -82,6 +84,7 @@ data class EnrichedCallData(
                         callerName = base.osProvidedCallerName,
                         packageName = base.packageName,
                         isCallAudioVoIpBased = base.isCallAudioVoIpBased,
+                        isScreenRecording = base.isScreenRecording,
                     )
                 }
 
@@ -108,6 +111,7 @@ data class EnrichedCallData(
                     callerName = callerName,
                     packageName = base.packageName,
                     isCallAudioVoIpBased = base.isCallAudioVoIpBased,
+                    isScreenRecording = base.isScreenRecording,
                 )
             }
 

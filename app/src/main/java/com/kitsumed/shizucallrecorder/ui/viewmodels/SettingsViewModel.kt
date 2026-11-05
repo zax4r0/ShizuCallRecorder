@@ -81,6 +81,8 @@ interface SettingsActions {
     fun setOverlayEnabled(enabled: Boolean)
     fun setPlaybackCaptureAllowed(enabled: Boolean)
     fun setAudioChannelSplitEnabled(enabled: Boolean)
+    fun setScreenRecordingEnabled(enabled: Boolean)
+    fun setScreenRecordApps(apps: Set<String>)
 }
 
 /**
@@ -484,6 +486,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        refresh()
+    }
+
+    override fun setScreenRecordingEnabled(enabled: Boolean) {
+        preferences.setScreenRecordingEnabled(enabled)
+        if (enabled) {
+            com.kitsumed.shizucallrecorder.services.callDetection.voip.VoipCallWatcher.getInstance(appContext).start()
+        }
+        refresh()
+    }
+
+    override fun setScreenRecordApps(apps: Set<String>) {
+        preferences.setScreenRecordApps(apps)
         refresh()
     }
 }

@@ -135,8 +135,11 @@ class InCallService : InCallService() {
                 packageName == telecomManager?.defaultDialerPackage || // Could be a third-party dialer, but it also means it handle carriers calls.
                 packageName == "com.android.phone"
 
-        // If the call is from a third-party app and the user has disabled third-party call recording, we should free the primary lock and not trigger the recording pipeline.
-        if (!isCallFromSystemDialer && !appPreferences.isRecordThirdPartyCallsEnabled()) {
+        val isScreenRecordApp = appPreferences.isAppSelectedForScreenRecord(packageName)
+
+        // If the call is from a third-party app and the user has disabled third-party call recording, we should free the primary lock and not trigger the recording pipeline,
+        // unless the app is explicitly selected for screen recording.
+        if (!isCallFromSystemDialer && !appPreferences.isRecordThirdPartyCallsEnabled() && !isScreenRecordApp) {
             AppLogger.i( "Tracked call resolved to package $packageName (not system/default dialer). Releasing the primary lock because third-party recording is disabled.")
             releasePrimaryTrackedCall()
             return
@@ -174,6 +177,7 @@ class InCallService : InCallService() {
                 osProvidedCallerName = osCallerName,
                 packageName = packageName,
                 isCallAudioVoIpBased = isVoip || isWifiCall, // Wi-Fi call also uses the same audio logic as VoIP. issue #136
+                isScreenRecording = isScreenRecordApp
             )
 
             serviceScope.launch {

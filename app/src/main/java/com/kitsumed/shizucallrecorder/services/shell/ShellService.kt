@@ -16,6 +16,7 @@ import com.kitsumed.shizucallrecorder.ILogCallback
 import com.kitsumed.shizucallrecorder.IRecordingCallback
 import com.kitsumed.shizucallrecorder.IShellService
 import com.kitsumed.shizucallrecorder.data.recording.RecordingPlan
+import com.kitsumed.shizucallrecorder.integrations.scrcpy.ShellScrcpyPipeline
 import com.kitsumed.shizucallrecorder.services.shell.recording.ShellRecordingEngine
 import com.kitsumed.shizucallrecorder.services.shell.utils.ShellWorkarounds
 import com.kitsumed.shizucallrecorder.utils.AppLogger
@@ -36,6 +37,9 @@ class ShellService : IShellService.Stub {
     private val isInitialized = AtomicBoolean(false)
     private val recordingEngine by lazy { ShellRecordingEngine() }
     private val commandExecutor by lazy { ShellCommandExecutor() }
+    private val scrcpyPipeline by lazy { ShellScrcpyPipeline() }
+
+    private var context: Context? = null
 
     // ---- Shizuku-required constructors
 
@@ -51,7 +55,9 @@ class ShellService : IShellService.Stub {
      * @param context [android.content.Context] provided by Shizuku, or null on older versions.
      */
     @Keep
-    constructor(context: Context?)
+    constructor(context: Context?) {
+        this.context = context
+    }
     
     /**
      * Ensure the shell service thread is initialized. Should generally be called in every method.
@@ -92,6 +98,7 @@ class ShellService : IShellService.Stub {
     override fun stopRecording() = clearIdentity {
         ensureInitialized()
         recordingEngine.stop()
+        scrcpyPipeline.stop()
     }
 
     override fun pauseRecording() = clearIdentity {
@@ -117,6 +124,75 @@ class ShellService : IShellService.Stub {
     override fun grantRole(packageName: String, roleName: String, userProfileId: Int): Boolean = clearIdentity {
         ensureInitialized()
         return commandExecutor.grantRole(packageName, roleName, userProfileId)
+    }
+
+    override fun startScrcpyRecording(
+        outputFile: ParcelFileDescriptor,
+        serverPath: String,
+        recordScreen: Boolean,
+        audioSource: String,
+        callback: IRecordingCallback
+    ) = clearIdentity {
+        ensureInitialized()
+        try {
+            android.os.StrictMode.setThreadPolicy(android.os.StrictMode.ThreadPolicy.LAX)
+        } catch (_: Throwable) {}
+        val ctx = this.context ?: com.kitsumed.shizucallrecorder.services.shell.utils.FakeContext.get()
+        scrcpyPipeline.start(
+            context = ctx,
+            outputFile = outputFile,
+            serverPath = serverPath,
+            recordScreen = recordScreen,
+            audioSource = audioSource,
+            callback = callback
+        )
+    }
+
+    override fun getForegroundPackage(): String? = clearIdentity {
+        ensureInitialized()
+        // Method 1: dumpsys window
+        try {
+            val process = ProcessBuilder("dumpsys", "window").start()
+            val reader = process.inputStream.bufferedReader()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val l = line!!
+                if (l.contains("mCurrentFocus") || l.contains("mFocusedApp")) {
+                    val regex = Regex("""([a-zA-Z0-9_.]+)/""")
+                    val match = regex.find(l)
+                    if (match != null) {
+                        val pkg = match.groupValues[1]
+                        if (pkg.isNotEmpty() && !pkg.contains("StatusBar") && !pkg.contains("SystemUI") && !pkg.contains("launcher")) {
+                            runCatching { process.destroy() }
+                            return@clearIdentity pkg
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        // Method 2: dumpsys activity activities
+        try {
+            val process = ProcessBuilder("dumpsys", "activity", "activities").start()
+            val reader = process.inputStream.bufferedReader()
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val l = line!!
+                if (l.contains("topResumedActivity=") || l.contains("ResumedActivity:")) {
+                    val regex = Regex("""([a-zA-Z0-9_.]+)/""")
+                    val match = regex.find(l)
+                    if (match != null) {
+                        val pkg = match.groupValues[1]
+                        if (pkg.isNotEmpty() && !pkg.contains("StatusBar") && !pkg.contains("SystemUI") && !pkg.contains("launcher")) {
+                            runCatching { process.destroy() }
+                            return@clearIdentity pkg
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {}
+
+        return@clearIdentity null
     }
 
 

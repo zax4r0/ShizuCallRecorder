@@ -42,7 +42,7 @@ class RecordingPlanResolver(
         val isAudioChannelSplitEnabled = preferences.isAudioChannelSplitEnabled()
 
         // For VoIP-based calls, a different plan is needed.
-        val originalPlan = if (callData.isCallAudioVoIpBased && isPlaybackCaptureAllowed) {
+        val basePlan = if (callData.isCallAudioVoIpBased && isPlaybackCaptureAllowed) {
             AppLogger.v("Resolving VoIP-based recording plan.")
             resolveVoIpPlan(source, codec, bitrate, isAudioChannelSplitEnabled)
         } else {
@@ -50,8 +50,19 @@ class RecordingPlanResolver(
             resolveNormalPlan(source, codec, bitrate, isAudioChannelSplitEnabled)
         }
 
-        AppLogger.d("Resolved recording plan: $originalPlan")
-        return originalPlan
+        val isScreenRecording = callData.isScreenRecording || (
+            preferences.isScreenRecordingEnabled() &&
+            callData.packageName != null &&
+            preferences.isAppSelectedForScreenRecord(callData.packageName)
+        )
+
+        val resolvedPlan = basePlan.copy(
+            isScreenRecording = isScreenRecording,
+            targetPackageName = callData.packageName
+        )
+
+        AppLogger.d("Resolved recording plan: $resolvedPlan (isScreenRecording=$isScreenRecording)")
+        return resolvedPlan
     }
 
     /**

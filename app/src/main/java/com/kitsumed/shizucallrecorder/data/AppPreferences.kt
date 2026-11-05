@@ -87,6 +87,10 @@ class AppPreferences(context: Context) {
         const val SHIZUKU_START_ON_RECORD = false
         const val SHIZUKU_KEEP_ALIVE = false
         const val SHIZUKU_AUTH_KEY = ""
+
+        // --- Screen Recording (scrcpy) ---
+        const val SCREEN_RECORD_ENABLED = true
+        val SCREEN_RECORD_APPS = setOf("com.whatsapp", "com.whatsapp.w4b", "com.snapchat.android")
     }
 
     /**
@@ -131,7 +135,9 @@ class AppPreferences(context: Context) {
         SHIZUKU_KEEP_ALIVE("shizuku_keep_alive"),
         SHIZUKU_AUTH_KEY("shizuku_auth_key"),
         CALL_DETECTION_MODE("call_detection_mode"),
-        RECORD_THIRD_PARTY_CALLS("record_third_party_calls");
+        RECORD_THIRD_PARTY_CALLS("record_third_party_calls"),
+        SCREEN_RECORD_ENABLED("screen_record_enabled"),
+        SCREEN_RECORD_APPS("screen_record_apps");
     }
 
     // -------- Nested enums
@@ -470,4 +476,25 @@ class AppPreferences(context: Context) {
 
     /** Sets the Shizuku auth key. */
     fun setShizukuAuthKey(key: String) = setString(Key.SHIZUKU_AUTH_KEY, key)
+
+    // -------- Screen Recording (scrcpy) --------
+
+    /** Checks whether screen recording for selected apps is enabled. */
+    fun isScreenRecordingEnabled(): Boolean = getBoolean(Key.SCREEN_RECORD_ENABLED, DefaultsValue.SCREEN_RECORD_ENABLED)
+
+    /** Sets whether screen recording for selected apps is enabled. */
+    fun setScreenRecordingEnabled(enabled: Boolean) = setBoolean(Key.SCREEN_RECORD_ENABLED, enabled)
+
+    /** Gets the set of package names selected for screen recording. */
+    fun getScreenRecordApps(): Set<String> = getStringSet(Key.SCREEN_RECORD_APPS, DefaultsValue.SCREEN_RECORD_APPS)
+
+    /** Sets the set of package names selected for screen recording. */
+    fun setScreenRecordApps(apps: Set<String>) = setStringSet(Key.SCREEN_RECORD_APPS, apps)
+
+    /** Checks if a specific package is selected for screen recording. */
+    fun isAppSelectedForScreenRecord(packageName: String): Boolean {
+        if (!isScreenRecordingEnabled()) return false
+        val apps = getScreenRecordApps()
+        return apps.contains(packageName)
+    }
 }

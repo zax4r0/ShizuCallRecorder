@@ -26,6 +26,7 @@ data class RawCallData(
     val direction: CallDirection,
     val osProvidedCallerName: String? = null,
     val packageName: String? = null,
-    val isCallAudioVoIpBased: Boolean = false
+    val isCallAudioVoIpBased: Boolean = false,
+    val isScreenRecording: Boolean = false
 ) : Parcelable
 

@@ -67,6 +67,14 @@ android {
         // Keep theses two values hard-coded here and update them per version. (To keep F-Droid compatibility since their parser is very basic)
         versionCode = 20
         versionName = "2.0.0"
+
+        val scrcpyVersion = "5.0"
+        val scrcpyServerSha256 = "26cbc9ad0aced6c2282455bef4fb43462605c1f8758c74b4ab1dbf818c229daa"
+        val scrcpyServerAssetName = "scrcpy-server"
+
+        buildConfigField("String", "SCRCPY_VERSION", "\"$scrcpyVersion\"")
+        buildConfigField("String", "SCRCPY_SERVER_SHA256", "\"$scrcpyServerSha256\"")
+        buildConfigField("String", "SCRCPY_SERVER_ASSET_NAME", "\"$scrcpyServerAssetName\"")
     }
     signingConfigs {
         // Signing config for CI environments.
@@ -95,6 +103,8 @@ android {
                 {
                     signingConfig = signingConfigs.getByName("ci-release")
                 }
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
             }
         }
     }

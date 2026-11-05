@@ -49,4 +49,14 @@ data class RecordingPlan(
      * Selected encoder bitrate in bits per second.
      */
     val bitrate: Int,
+
+    /**
+     * Whether this recording session should record the screen (video + audio) using scrcpy.
+     */
+    val isScreenRecording: Boolean = false,
+
+    /**
+     * Package name of the app being recorded (e.g. WhatsApp, Snapchat).
+     */
+    val targetPackageName: String? = null
 ) : Parcelable

@@ -12,6 +12,7 @@
     <!-- ========================================== -->
     <string name="app_name" translatable="false">ShizuCallRecorder</string>
     <string name="general_close">Close</string>
+    <string name="general_save">Save</string>
     <string name="general_continue">Continue</string>
     <string name="general_ok">OK</string>
     <string name="general_cancel">Cancel</string>
@@ -335,4 +336,13 @@
     <string name="recording_shizuku_not_started">Shizuku-Server process is stopped. Please start Shizuku and ensure it is always able to run when the app wants to record audio.</string>
     <string name="recording_shizuku_permission_denied">Please allow the application to use Shizuku. Permission was denied.</string>
     <string name="recording_shizuku_auth_key_missing">Shizuku Intents authentication key is missing. Please enter it in the app settings.</string>
+    <!-- Screen Recording (scrcpy) -->
+    <string name="settings_screen_record_category">Screen Recording (scrcpy)</string>
+    <string name="settings_screen_record_enable_label">Record screen for selected apps</string>
+    <string name="settings_screen_record_enable_desc">Automatically record screen video &amp; audio for selected apps (like Snapchat, WhatsApp) using scrcpy without invoking Android native screen recording dialogs.</string>
+    <string name="settings_screen_record_apps_label">Selected apps for screen recording</string>
+    <string name="settings_screen_record_apps_desc">Choose which apps have their screen and audio recorded.</string>
+    <string name="dialog_app_selection_title">Select Apps for Screen Recording</string>
+    <string name="dialog_app_selection_search_placeholder">Search apps...</string>
+    <string name="dialog_app_selection_clear_all">Clear All</string>
 </resources>

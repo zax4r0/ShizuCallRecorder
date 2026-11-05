@@ -81,6 +81,10 @@ object ShellWorkarounds {
      * Applies all required workarounds to the current ActivityThread instance to ensure system APIs function correctly in a shell process.
      */
     fun apply() {
+        try {
+            android.os.StrictMode.setThreadPolicy(android.os.StrictMode.ThreadPolicy.LAX)
+        } catch (_: Throwable) {}
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             fillConfigurationController()
         }

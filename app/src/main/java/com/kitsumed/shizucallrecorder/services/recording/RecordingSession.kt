@@ -118,22 +118,36 @@ class RecordingSession(
             plan.codec
         )
 
+        val mimeType = if (plan.isScreenRecording) "video/mp4" else plan.codec.mimeType
+
         val safResult = SafHelper.createAudioFile(
             context,
             folderUri,
             fileName,
-            plan.codec.mimeType
+            mimeType
         ) ?: throw InitializationException(
             userFriendlyMessage = context.getString(R.string.recording_error_file_creation),
-            technicalLogMessage = "Failed to create audio file in SAF storage."
+            technicalLogMessage = "Failed to create recording file in SAF storage."
         )
 
         currentRecordingUri = safResult.uri
         outputPfd = safResult.descriptor
 
         try {
-            remoteService.startRecording(outputPfd!!, plan, recordingCallback)
-            AppLogger.i("Recording session initialized the remote recording engine successfully.")
+            if (plan.isScreenRecording) {
+                val serverPath = com.kitsumed.shizucallrecorder.integrations.scrcpy.ScrcpyConfig.getServerPath()
+                remoteService.startScrcpyRecording(
+                    outputPfd!!,
+                    serverPath,
+                    true,
+                    "mic-voice-communication",
+                    recordingCallback
+                )
+                AppLogger.i("Recording session initialized scrcpy screen recording engine successfully.")
+            } else {
+                remoteService.startRecording(outputPfd!!, plan, recordingCallback)
+                AppLogger.i("Recording session initialized the remote recording engine successfully.")
+            }
         } catch (e: RemoteException) {
             // Since this is a RemoteException, recording never started, so we can delete the file and cleanup.
             cancel(context)

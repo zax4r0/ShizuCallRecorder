@@ -77,6 +77,29 @@ interface IShellService {
     boolean grantRole(String packageName, String roleName, int userProfileId) = 8;
 
     /**
+     * Starts a scrcpy recording session (supporting screen video + audio, or audio only).
+     *
+     * @param outputFile The writable descriptor for the recording file (.mp4).
+     * @param serverPath Path to the scrcpy-server jar.
+     * @param recordScreen If true, records screen video and audio. If false, records audio only.
+     * @param audioSource Audio source passed to scrcpy (e.g. "mic-voice-communication", "playback", "mic").
+     * @param callback The callback interface for recording events.
+     */
+    void startScrcpyRecording(
+        in ParcelFileDescriptor outputFile,
+        String serverPath,
+        boolean recordScreen,
+        String audioSource,
+        in IRecordingCallback callback
+    ) = 9;
+
+    /**
+     * Retrieves the package name of the currently focused / top foreground app.
+     * Used to detect when selected apps (such as Snapchat or WhatsApp) are active.
+     */
+    String getForegroundPackage() = 10;
+
+    /**
      * Called by Shizuku when it wants to shut down this user service.
      * MUST call [kotlin.system.exitProcess] so the entire shell process is terminated.
      * This is the special transaction code used by Shizuku to "destroy" the process.

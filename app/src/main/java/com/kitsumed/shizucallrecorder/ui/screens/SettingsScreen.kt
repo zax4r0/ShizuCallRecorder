@@ -67,6 +67,7 @@ import com.kitsumed.shizucallrecorder.system.openGithubReportIssue
 import com.kitsumed.shizucallrecorder.system.openGithubWiki
 import com.kitsumed.shizucallrecorder.system.storage.SafHelper
 import com.kitsumed.shizucallrecorder.system.takePersistableFolderPermission
+import com.kitsumed.shizucallrecorder.ui.common.AppSelectionDialog
 import com.kitsumed.shizucallrecorder.ui.common.ContactSelectionDialog
 import com.kitsumed.shizucallrecorder.ui.common.FileNameFormatDialog
 import com.kitsumed.shizucallrecorder.ui.common.M3DropdownField
@@ -211,6 +212,7 @@ fun SettingsContent(
                     onOpenContactsOutgoing = onOpenContactsOutgoing
                 )
             }
+            item { ScreenRecordingSection(preferences, updateTrigger, actions) }
             item { AudioSection(preferences, updateTrigger, actions) }
             item { SecuritySection(preferences, updateTrigger, actions) }
             item { VisualSection(preferences, updateTrigger, actions) }
@@ -775,6 +777,75 @@ private fun RecordingSection(
     }
 }
 
+@Composable
+private fun ScreenRecordingSection(
+    preferences: AppPreferences,
+    updateTrigger: Int,
+    actions: SettingsActions
+) {
+    val isScreenRecordingEnabled = remember(updateTrigger) { preferences.isScreenRecordingEnabled() }
+    val screenRecordApps = remember(updateTrigger) { preferences.getScreenRecordApps() }
+    var showAppSelectionDialog by remember { mutableStateOf(false) }
+
+    SettingsSection(title = stringResource(R.string.settings_screen_record_category)) {
+        ToggleListItem(
+            label = stringResource(R.string.settings_screen_record_enable_label),
+            checked = isScreenRecordingEnabled,
+            onCheckedChange = { actions.setScreenRecordingEnabled(it) },
+            description = stringResource(R.string.settings_screen_record_enable_desc)
+        )
+
+        if (isScreenRecordingEnabled) {
+            val count = screenRecordApps.size
+            ListItem(
+                headlineContent = {
+                    Text(
+                        text = stringResource(R.string.settings_screen_record_apps_label),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                },
+                supportingContent = {
+                    Text(
+                        text = stringResource(R.string.settings_screen_record_apps_desc),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                trailingContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "$count apps",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showAppSelectionDialog = true }
+                    .padding(horizontal = 8.dp)
+            )
+        }
+    }
+
+    if (showAppSelectionDialog) {
+        AppSelectionDialog(
+            title = stringResource(R.string.dialog_app_selection_title),
+            initialSelection = screenRecordApps,
+            onConfirm = { newSelection ->
+                actions.setScreenRecordApps(newSelection)
+            },
+            onDismiss = {
+                showAppSelectionDialog = false
+            }
+        )
+    }
+}
+
 /** Shows the audio source, codec, and bit-rate dropdowns.
  *
  * @param preferences   The [AppPreferences] instance to read data from.
@@ -1280,6 +1351,8 @@ private fun SettingsScreenPreview() {
             override fun setOverlayEnabled(enabled: Boolean) {}
             override fun setPlaybackCaptureAllowed(enabled: Boolean) {}
             override fun setAudioChannelSplitEnabled(enabled: Boolean) {}
+            override fun setScreenRecordingEnabled(enabled: Boolean) {}
+            override fun setScreenRecordApps(apps: Set<String>) {}
         }
 
         // File name template selection dialog

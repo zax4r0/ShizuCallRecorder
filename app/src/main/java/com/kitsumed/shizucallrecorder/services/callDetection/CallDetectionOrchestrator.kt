@@ -35,6 +35,10 @@ class CallDetectionOrchestrator(private val context: Context) {
             val shouldEnable = (mode == activeMode)
             setComponentState(mode.componentClassName, shouldEnable)
         }
+
+        if (prefs.isScreenRecordingEnabled()) {
+            com.kitsumed.shizucallrecorder.services.callDetection.voip.VoipCallWatcher.getInstance(appContext).start()
+        }
     }
 
     /**
