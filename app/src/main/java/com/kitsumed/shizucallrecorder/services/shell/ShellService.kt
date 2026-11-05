@@ -150,14 +150,62 @@ class ShellService : IShellService.Stub {
 
     override fun getForegroundPackage(): String? = clearIdentity {
         ensureInitialized()
-        // Method 1: dumpsys window
+
+        // Method 1: Check dumpsys audio for active VoIP mode owner or recent setMode(MODE_IN_COMMUNICATION)
+        try {
+            val process = ProcessBuilder("dumpsys", "audio").start()
+            val reader = process.inputStream.bufferedReader()
+            var line: String?
+            var activeModeOwnerPkg: String? = null
+            var lastNonSystemVoipPkg: String? = null
+            var inModeOwnerSection = false
+
+            while (reader.readLine().also { line = it } != null) {
+                val l = line!!
+                if (l.contains("## Audio mode:")) {
+                    inModeOwnerSection = true
+                } else if (inModeOwnerSection && l.startsWith("## ")) {
+                    inModeOwnerSection = false
+                }
+
+                if (inModeOwnerSection && l.contains("package=")) {
+                    val match = Regex("""package=([a-zA-Z0-9_.]+)""").find(l)
+                    if (match != null) {
+                        val pkg = match.groupValues[1]
+                        if (pkg.isNotEmpty() && pkg != "android" && pkg != "com.android.server.telecom") {
+                            activeModeOwnerPkg = pkg
+                        }
+                    }
+                }
+
+                if (l.contains("setMode(MODE_IN_COMMUNICATION) from package=")) {
+                    val match = Regex("""setMode\(MODE_IN_COMMUNICATION\) from package=([a-zA-Z0-9_.]+)""").find(l)
+                    if (match != null) {
+                        val pkg = match.groupValues[1]
+                        if (pkg.isNotEmpty() && pkg != "android" && pkg != "com.android.server.telecom") {
+                            lastNonSystemVoipPkg = pkg
+                        }
+                    }
+                }
+            }
+            runCatching { process.destroy() }
+
+            if (activeModeOwnerPkg != null) {
+                return@clearIdentity activeModeOwnerPkg
+            }
+            if (lastNonSystemVoipPkg != null) {
+                return@clearIdentity lastNonSystemVoipPkg
+            }
+        } catch (_: Exception) {}
+
+        // Method 2: dumpsys window (mCurrentFocus, mFocusedApp, topApp)
         try {
             val process = ProcessBuilder("dumpsys", "window").start()
             val reader = process.inputStream.bufferedReader()
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 val l = line!!
-                if (l.contains("mCurrentFocus") || l.contains("mFocusedApp")) {
+                if (l.contains("mCurrentFocus") || l.contains("mFocusedApp") || l.contains("topApp=")) {
                     val regex = Regex("""([a-zA-Z0-9_.]+)/""")
                     val match = regex.find(l)
                     if (match != null) {
@@ -171,16 +219,16 @@ class ShellService : IShellService.Stub {
             }
         } catch (_: Exception) {}
 
-        // Method 2: dumpsys activity activities
+        // Method 3: dumpsys activity activities
         try {
             val process = ProcessBuilder("dumpsys", "activity", "activities").start()
             val reader = process.inputStream.bufferedReader()
             var line: String?
             while (reader.readLine().also { line = it } != null) {
                 val l = line!!
-                if (l.contains("topResumedActivity=") || l.contains("ResumedActivity:")) {
+                if (l.contains("topResumedActivity=") || l.contains("ResumedActivity:") || l.contains("mResumedActivity:")) {
                     val regex = Regex("""([a-zA-Z0-9_.]+)/""")
-                    val match = regex.find(l)
+                    val match = Regex("""([a-zA-Z0-9_.]+)/""").find(l)
                     if (match != null) {
                         val pkg = match.groupValues[1]
                         if (pkg.isNotEmpty() && !pkg.contains("StatusBar") && !pkg.contains("SystemUI") && !pkg.contains("launcher")) {

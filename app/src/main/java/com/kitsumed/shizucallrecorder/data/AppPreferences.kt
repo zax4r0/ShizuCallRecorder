@@ -90,7 +90,13 @@ class AppPreferences(context: Context) {
 
         // --- Screen Recording (scrcpy) ---
         const val SCREEN_RECORD_ENABLED = true
-        val SCREEN_RECORD_APPS = setOf("com.whatsapp", "com.whatsapp.w4b", "com.snapchat.android")
+        val SCREEN_RECORD_APPS = setOf(
+            "com.whatsapp",
+            "com.whatsapp.w4b",
+            "com.snapchat.android",
+            "com.instagram.android",
+            "com.instagram.android.piko"
+        )
     }
 
     /**
@@ -486,7 +492,16 @@ class AppPreferences(context: Context) {
     fun setScreenRecordingEnabled(enabled: Boolean) = setBoolean(Key.SCREEN_RECORD_ENABLED, enabled)
 
     /** Gets the set of package names selected for screen recording. */
-    fun getScreenRecordApps(): Set<String> = getStringSet(Key.SCREEN_RECORD_APPS, DefaultsValue.SCREEN_RECORD_APPS)
+    fun getScreenRecordApps(): Set<String> {
+        val saved = getStringSet(Key.SCREEN_RECORD_APPS, DefaultsValue.SCREEN_RECORD_APPS)
+        // If the saved set has whatsapp but is missing instagram (from older app version), automatically include instagram defaults
+        if (saved.contains("com.whatsapp") && !saved.contains("com.instagram.android")) {
+            val updated = saved + setOf("com.instagram.android", "com.instagram.android.piko")
+            setScreenRecordApps(updated)
+            return updated
+        }
+        return saved
+    }
 
     /** Sets the set of package names selected for screen recording. */
     fun setScreenRecordApps(apps: Set<String>) = setStringSet(Key.SCREEN_RECORD_APPS, apps)
@@ -495,6 +510,9 @@ class AppPreferences(context: Context) {
     fun isAppSelectedForScreenRecord(packageName: String): Boolean {
         if (!isScreenRecordingEnabled()) return false
         val apps = getScreenRecordApps()
-        return apps.contains(packageName)
+        if (apps.contains(packageName)) return true
+        if (packageName.startsWith("com.instagram.android") && (apps.contains("com.instagram.android") || apps.contains("com.instagram.android.piko"))) return true
+        if (packageName.startsWith("com.whatsapp") && (apps.contains("com.whatsapp") || apps.contains("com.whatsapp.w4b"))) return true
+        return false
     }
 }

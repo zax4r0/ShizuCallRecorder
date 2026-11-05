@@ -102,10 +102,12 @@ class VoipCallWatcher private constructor(context: Context) {
 
         scope.launch {
             // Give the app a moment to switch foreground/audio
-            delay(500)
+            delay(300)
+
+            if (audioManager.mode != AudioManager.MODE_IN_COMMUNICATION) return@launch
 
             val detectedPackage = resolveForegroundPackage()
-            AppLogger.d("VoipCallWatcher: Detected foreground package during MODE_IN_COMMUNICATION: $detectedPackage")
+            AppLogger.d("VoipCallWatcher: Detected package during MODE_IN_COMMUNICATION: $detectedPackage")
 
             if (detectedPackage != null && appPreferences.isAppSelectedForScreenRecord(detectedPackage)) {
                 if (isVoipSessionActive.compareAndSet(false, true)) {
